@@ -5,7 +5,8 @@ const Schema = Mongoose.Schema;
 
 const cryptoCurrencySchema = new Schema({
   name: String,
-  price: String,
+  symbol: String,
+  slug: String,
   time : { type : Date, default: Date.now }
 });
 
