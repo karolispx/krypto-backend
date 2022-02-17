@@ -4,10 +4,13 @@ const Mongoose = require("mongoose");
 const Schema = Mongoose.Schema;
 
 const coinSchema = new Schema({
-  name: String,
-  balance: String,
-  cost: String,
-  value: String,
+  balance: Number,
+  cost: Number,
+  value: Number,
+  cryptocurrency: {
+    type: Schema.Types.ObjectId,
+    ref: "CryptoCurrency"
+  },
   user: {
     type: Schema.Types.ObjectId,
     ref: "User"

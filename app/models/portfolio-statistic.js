@@ -4,9 +4,9 @@ const Mongoose = require("mongoose");
 const Schema = Mongoose.Schema;
 
 const portfolioStatisticSchema = new Schema({
-  value: String,
-  cost: String,
-  gains: String,
+  value: Number,
+  cost: Number,
+  gains: Number,
   user: {
     type: Schema.Types.ObjectId,
     ref: "User"

@@ -1,6 +1,6 @@
 const Boom = require("@hapi/boom");
 const Joi = require("@hapi/joi");
-const utils = require('./utils.js');
+const userUtil = require('../utils/user.js');
 const User = require("../models/user");
 const bcrypt = require('bcrypt');
 
@@ -16,7 +16,7 @@ const Users = {
         } else if (!await bcrypt.compare(request.payload.password, user.password)) {
           return Boom.unauthorized("Invalid password");
         } else {
-          const token = utils.createToken(user);
+          const token = userUtil.createToken(user);
 
           return h.response({ success: true, token: token }).code(201);
         }

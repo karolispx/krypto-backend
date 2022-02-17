@@ -4,7 +4,7 @@ const Hapi = require("@hapi/hapi");
 const Joi = require("@hapi/joi");
 const env = require("dotenv");
 
-const utils = require("./app/controllers/utils.js");
+const userUtil = require("./app/utils/user.js");
 
 require("./app/models/db");
 
@@ -31,7 +31,7 @@ async function init() {
 
   server.auth.strategy("jwt", "jwt", {
     key: process.env.JWT_SECRET,
-    validate: utils.validate,
+    validate: userUtil.validate,
     verifyOptions: { algorithms: ["HS256"] },
   });
   
