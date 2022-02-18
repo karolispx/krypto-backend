@@ -4,7 +4,17 @@ var sanitizer = require('sanitizer');
 const Coin = require("../models/coin");
 const User = require("../models/user");
 const PortfolioStatistic = require("../models/portfolio-statistic");
+const bcrypt = require('bcrypt');
 
+exports.generateAPIToken = async function (request) {
+  let randomString = (Math.random() + 1).toString(36).substring(7)
+  
+  let token = await bcrypt.hash(randomString, 10);
+
+  token = token.replace(/[^a-z0-9]/gi, '');
+
+  return token;
+};
 
 exports.coingeckoCoinsList = async function (request) {
   const CoinGeckoClient = new CoinGecko();
@@ -44,7 +54,20 @@ exports.coingeckoCoinsList = async function (request) {
   return false;
 };
 
-exports.coingeckoCoinMarkets = async function (ids, request) {
+exports.coingeckoCoinValue = async function (slug, request) {
+  const CoinGeckoClient = new CoinGecko();
+
+  let markets = await CoinGeckoClient.coins.markets({ids: [slug], vs_currency: "eur"});
+
+  if (markets && markets.data && markets.data.length) {
+    let price = markets.data[0].current_price;
+
+    if (price) {
+      return price
+    }
+  }
+  
+  return false
 };
 
 exports.doPortfolioSync = async function (userId, request) {
@@ -106,5 +129,4 @@ exports.doPortfolioSync = async function (userId, request) {
 
     await new PortfolioStatistic(portfolioStatistic).save();
   }
-
 };

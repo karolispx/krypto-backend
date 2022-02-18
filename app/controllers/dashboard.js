@@ -4,7 +4,7 @@ const dashboardUtil = require('../utils/dashboard.js');
 const Coin = require("../models/coin");
 const CryptoCurrency = require("../models/crypto-currency");
 var sanitizer = require('sanitizer');
-const portfolioStatistic = require("../models/portfolio-statistic.js");
+const PortfolioStatistic = require("../models/portfolio-statistic.js");
 
 const Dashboard = {
   test: {
@@ -36,7 +36,7 @@ const Dashboard = {
         gains: 0
       }
 
-      const latestPortfolioStatistic = await portfolioStatistic.find({ user: userId }).limit(1).sort('-time').lean();
+      const latestPortfolioStatistic = await PortfolioStatistic.find({ user: userId }).limit(1).sort('-time').lean();
 
       if (latestPortfolioStatistic && latestPortfolioStatistic.length) {
         statistics.value = latestPortfolioStatistic[0].value

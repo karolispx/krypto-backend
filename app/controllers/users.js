@@ -60,7 +60,6 @@ const Users = {
 
         user = await newUser.save();
 
-        console.log(user)
         return h.response(user).code(201);
       } catch (err) {
         return Boom.badData(err.message);
@@ -111,9 +110,7 @@ const Users = {
         return Boom.unauthorized("Not logged in");
       }
 
-      const user = await User.findOne({ _id: userId });
-
-      return h.response(user).code(200);
+      return h.response(await User.findOne({ _id: userId })).code(200);
     },
   },
 

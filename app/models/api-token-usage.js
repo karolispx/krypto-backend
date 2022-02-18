@@ -4,7 +4,8 @@ const Mongoose = require("mongoose");
 const Schema = Mongoose.Schema;
 
 const apiTokenUsageSchema = new Schema({
-  information: String,
+  useragent: String,
+  host: String,
   token: {
     type: Schema.Types.ObjectId,
     ref: "APIToken"
