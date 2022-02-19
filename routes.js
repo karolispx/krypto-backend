@@ -2,6 +2,7 @@
 
 const Users = require("./app/controllers/users");
 const Dashboard = require("./app/controllers/dashboard");
+const Alerts = require("./app/controllers/alerts");
 const APISettings = require("./app/controllers/api-settings");
 
 module.exports = [
@@ -30,9 +31,14 @@ module.exports = [
   { method: 'GET', path: '/api/users/me/token/{id}/usage', config: APISettings.usage },
   { method: 'DELETE', path: '/api/users/me/token/{id}/usage', config: APISettings.clearUsage },
 
+  // Alert Settings endpoints
+  { method: 'GET', path: '/api/users/me/alerts', config: Alerts.index },
+  { method: 'POST', path: '/api/users/me/alerts', config: Alerts.create },
+  { method: 'POST', path: '/api/users/me/alerts/{id}', config: Alerts.edit },
+  { method: 'POST', path: '/api/users/me/alerts/{id}/refresh', config: Alerts.refresh },
+  { method: 'DELETE', path: '/api/users/me/alerts/{id}', config: Alerts.delete },
 
 
   { method: 'GET', path: '/api/test', config: Dashboard.test },
-
 ];
 
