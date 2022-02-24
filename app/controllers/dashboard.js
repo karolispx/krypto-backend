@@ -33,15 +33,17 @@ const Dashboard = {
       let statistics = {
         value: 0,
         cost: 0,
-        gains: 0
+        gains: 0,
+        time: null
       }
 
       const latestPortfolioStatistic = await PortfolioStatistic.find({ user: userId }).limit(1).sort('-time').lean();
 
       if (latestPortfolioStatistic && latestPortfolioStatistic.length) {
-        statistics.value = latestPortfolioStatistic[0].value
-        statistics.cost = latestPortfolioStatistic[0].cost
-        statistics.gains = latestPortfolioStatistic[0].gains
+        statistics.value = Math.round(latestPortfolioStatistic[0].value * 100) / 100
+        statistics.cost = Math.round(latestPortfolioStatistic[0].cost * 100) / 100
+        statistics.gains = Math.round(latestPortfolioStatistic[0].gains * 100) / 100
+        statistics.time = latestPortfolioStatistic[0].time
       }
 
       let chart = []
@@ -64,7 +66,7 @@ const Dashboard = {
       // Do portfolio sync
       dashboardUtil.doPortfolioSync(userId);
 
-      const coins = await Coin.find({user: userId}).sort('-_id').lean();
+      const coins = await Coin.find({user: userId}).populate(["cryptocurrency"]).sort('-_id').lean();
 
       return h.response({ coins }).code(200);
     },

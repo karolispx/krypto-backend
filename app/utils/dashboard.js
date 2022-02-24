@@ -24,8 +24,6 @@ exports.coingeckoCoinsList = async function (request) {
   if (list && list.data) {
     list.data.forEach(async (coin) => {
       if (coin.id && coin.symbol && coin.name) {
-        console.log(coin.id)
-
         let findCryptoCurrency = await CryptoCurrency.findOne({symbol: coin.symbol}).lean();
 
         // Coin exists, update it
@@ -74,7 +72,7 @@ exports.doPortfolioSync = async function (userId, request) {
   const CoinGeckoClient = new CoinGecko();
   
   if (userId && await User.findOne({ _id: userId })) {
-    const coins = await Coin.find().populate(["cryptocurrency"]).sort('-_id').lean();
+    const coins = await Coin.find({ user: userId }).populate(["cryptocurrency"]).sort('-_id').lean();
 
     let userCoins = {};
 
