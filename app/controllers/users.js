@@ -60,7 +60,9 @@ const Users = {
 
         user = await newUser.save();
 
-        return h.response(user).code(201);
+        const token = userUtil.createToken(user);
+
+        return h.response({ success: true, token: token }).code(201);
       } catch (err) {
         return Boom.badData(err.message);
       }
