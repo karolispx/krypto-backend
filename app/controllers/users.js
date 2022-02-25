@@ -163,7 +163,8 @@ const Users = {
     },
     validate: {
       payload: {
-        password: Joi.string().required(),
+        currentpassword: Joi.string().required(),
+        newpassword: Joi.string().required(),
         repeatpassword: Joi.string().required()
       },
       failAction: function (request, h, error) {
@@ -183,11 +184,15 @@ const Users = {
   
         const user = await User.findById(userId);
 
-        if (userEdit.password !== userEdit.repeatpassword) {
-          return Boom.badData("Passwords do not match");
+        if (!await bcrypt.compare(userEdit.currentpassword, user.password)) {
+          return Boom.unauthorized("Invalid password");
         }
 
-        user.password = await bcrypt.hash(userEdit.password, 10);;
+        if (userEdit.newpassword !== userEdit.repeatpassword) {
+          return Boom.badData("New passwords do not match");
+        }
+
+        user.password = await bcrypt.hash(userEdit.newpassword, 10);
 
         await user.save();
 
