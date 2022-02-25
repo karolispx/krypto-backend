@@ -141,6 +141,10 @@ const Users = {
   
         const user = await User.findById(userId);
 
+        if (userEdit.email === user.email) {          
+          return Boom.badData("No email change detected");
+        }
+
         // Validate email address
         if (await User.findOne({email: userEdit.email, _id: {$ne: userId} }).lean()) {          
           return Boom.badData("Email address is already registered");
@@ -190,6 +194,10 @@ const Users = {
 
         if (userEdit.newpassword !== userEdit.repeatpassword) {
           return Boom.badData("New passwords do not match");
+        }
+
+        if (await bcrypt.compare(userEdit.newpassword, user.password)) {
+          return Boom.unauthorized("No password change detected");
         }
 
         user.password = await bcrypt.hash(userEdit.newpassword, 10);
