@@ -28,7 +28,7 @@ const Dashboard = {
       }
 
       // Do portfolio sync
-      dashboardUtil.doPortfolioSync(userId);
+      await dashboardUtil.doPortfolioSync(userId);
 
       let statistics = {
         value: 0,
@@ -64,9 +64,9 @@ const Dashboard = {
       }
 
       // Do portfolio sync
-      dashboardUtil.doPortfolioSync(userId);
+      await dashboardUtil.doPortfolioSync(userId);
 
-      const coins = await Coin.find({user: userId}).populate(["cryptocurrency"]).sort('-_id').lean();
+      const coins = await Coin.find({user: userId}).populate(["cryptocurrency"]).sort('-value').lean();
 
       return h.response({ coins }).code(200);
     },
@@ -78,7 +78,7 @@ const Dashboard = {
     },
     validate: {
       payload: {
-        id: Joi.string().required(),
+        symbol: Joi.string().required(),
         balance: Joi.number().required(),
         cost: Joi.number().required(),
       },
@@ -97,7 +97,7 @@ const Dashboard = {
 
         const data = request.payload;
 
-        let findCryptoCurrency = await CryptoCurrency.findOne({_id: data.id}).lean();
+        let findCryptoCurrency = await CryptoCurrency.findOne({symbol: data.symbol}).lean();
 
         // Ensure this crypto currency exists
         if (!findCryptoCurrency) {
@@ -105,7 +105,7 @@ const Dashboard = {
         }
 
         // Ensure same coin is not added to the same portfolio
-        if (await Coin.findOne({cryptocurrency: data.id, user: userId}).lean()) {
+        if (await Coin.findOne({cryptocurrency: findCryptoCurrency._id, user: userId}).lean()) {
           return Boom.badData("You already have this coin in your portfolio!");
         }
 
@@ -120,7 +120,7 @@ const Dashboard = {
         let newCoin = await new Coin(coin).save();
 
         // Do portfolio sync
-        dashboardUtil.doPortfolioSync(userId);
+        await dashboardUtil.doPortfolioSync(userId);
 
         return h.response(newCoin).code(200);
       } catch (err) {
@@ -167,7 +167,7 @@ const Dashboard = {
             await new Coin(coin).save();
 
             // Do portfolio sync
-            dashboardUtil.doPortfolioSync(userId);
+            await dashboardUtil.doPortfolioSync(userId);
 
             return h.response(coin).code(200);
           }
@@ -199,6 +199,9 @@ const Dashboard = {
           if (coin && (coin.user._id == userId)) {
             await Coin.deleteOne(coin);
 
+            // Do portfolio sync
+            await dashboardUtil.doPortfolioSync(userId);
+            
             return h.response({ success: true, message: "Coin deleted successfully" }).code(200);
           }
         }
@@ -208,7 +211,7 @@ const Dashboard = {
         return Boom.badData(err.message);
       }
     }
-  }
+  },
 };
 
 module.exports = Dashboard;

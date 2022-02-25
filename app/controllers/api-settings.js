@@ -215,7 +215,7 @@ const APISettings = {
 
             if (findToken.settings === "portfolio") {
               // Do portfolio sync
-              dashboardUtil.doPortfolioSync(findToken.user);
+              await dashboardUtil.doPortfolioSync(findToken.user);
 
               let statistics = {
                 value: 0,
