@@ -1,6 +1,7 @@
 const Boom = require("@hapi/boom");
 const Joi = require("@hapi/joi");
 const Alert = require("../models/alert");
+const CryptoCurrency = require("../models/crypto-currency");
 var sanitizer = require('sanitizer');
 
 const Alerts = {
@@ -46,24 +47,37 @@ const Alerts = {
 
         const data = request.payload;
 
-        if (data.notify === "portfolio" || data.notify === "coin") {
+        if (data.notify) {
+          let notify = "portfolio";
+
+          if (data.notify !== "portfolio") {
+            let findCryptoCurrency = await CryptoCurrency.findOne({symbol: data.notify}).lean();
+  
+            // Ensure this crypto currency exists
+            if (!findCryptoCurrency) {
+              return Boom.badData("This crypto currency does not exist!");
+            }
+
+            notify = data.notify
+          }
+
           if (data.rule === "eq" || data.rule === "lt" || data.rule === "gt") {
-                    // Ensure same alert is not added to the same user
-        if (await Alert.findOne({notify: data.notify, rule: data.rule, number: data.number, user: userId}).lean()) {
-          return Boom.badData("You already have this alert setup!");
-        }
+            // Ensure same alert is not added to the same user
+            if (await Alert.findOne({notify: notify, rule: data.rule, number: data.number, user: userId}).lean()) {
+              return Boom.badData("You already have this alert setup!");
+            }
 
-        let alert = {
-            notify: sanitizer.escape(data.notify),
-            rule: sanitizer.escape(data.rule),
-            number: Number(sanitizer.escape(data.number)),
-            fired: false,
-            user: userId
-        };
+            let alert = {
+                notify: sanitizer.escape(notify),
+                rule: sanitizer.escape(data.rule),
+                number: Number(sanitizer.escape(data.number)),
+                fired: false,
+                user: userId
+            };
 
-        let newAlert = await new Alert(alert).save();
+            let newAlert = await new Alert(alert).save();
 
-        return h.response(newAlert).code(200);
+            return h.response(newAlert).code(200);
           } else {
             return Boom.badData("Rule is not valid!");
           }
@@ -104,17 +118,31 @@ const Alerts = {
         if (id) {
           const data = request.payload;
   
-          if (data.notify === "portfolio" || data.notify === "coin") {
+          if (data.notify) {
+            let notify = "portfolio";
+
+            if (data.notify !== "portfolio") {
+              let findCryptoCurrency = await CryptoCurrency.findOne({symbol: data.notify}).lean();
+    
+              // Ensure this crypto currency exists
+              if (!findCryptoCurrency) {
+                return Boom.badData("This crypto currency does not exist!");
+              }
+  
+              notify = data.notify
+            }
+
             if (data.rule === "eq" || data.rule === "lt" || data.rule === "gt") {
               let findAlert = await Alert.findOne({_id: id, user: userId}).lean();
   
               if (findAlert) {
                 let alert = await Alert.findById(findAlert._id)
     
-                alert.notify = sanitizer.escape(data.notify)
+                alert.notify = sanitizer.escape(notify)
                 alert.rule = sanitizer.escape(data.rule)
                 alert.number = Number(sanitizer.escape(data.number))
-    
+                alert.fired = false
+
                 await new Alert(alert).save();
     
                 return h.response(alert).code(200);
