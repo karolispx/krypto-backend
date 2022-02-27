@@ -18,10 +18,25 @@ const APISettings = {
         return Boom.unauthorized("Not logged in");
       }
 
+
       let token = await APIToken.findOne({user: userId});
 
       if (token) {
-        return h.response(token).code(200);
+        let returnToken = {
+          _id: token._id,
+          token: token.token,
+          settings: token.settings
+        }
+
+        if (token.settings !== "portfolio") {
+          let findCryptoCurrency = await CryptoCurrency.findOne({symbol: token.settings}).lean();
+  
+          if (findCryptoCurrency) {
+            returnToken.cryptocurrency = findCryptoCurrency.name
+          }
+        }
+
+        return h.response(returnToken).code(200);
       } else {
         return Boom.notFound("No token has been generated yet.");
       }
@@ -46,12 +61,12 @@ const APISettings = {
       } else {
         try {
           const payload = request.payload;
-
+          
           if (payload && (payload.portfolio || payload.coin)) {
             let setting = "portfolio"
   
             if (payload.portfolio === false) {
-              let findCryptoCurrency = await CryptoCurrency.findOne({_id: payload.coin}).lean();
+              let findCryptoCurrency = await CryptoCurrency.findOne({symbol: payload.coin}).lean();
   
               // Ensure this crypto currency exists
               if (!findCryptoCurrency) {
@@ -105,7 +120,7 @@ const APISettings = {
               let setting = "portfolio"
     
               if (payload.portfolio === false) {
-                let findCryptoCurrency = await CryptoCurrency.findOne({_id: payload.coin}).lean();
+                let findCryptoCurrency = await CryptoCurrency.findOne({symbol: payload.coin}).lean();
     
                 // Ensure this crypto currency exists
                 if (!findCryptoCurrency) {
@@ -150,7 +165,7 @@ const APISettings = {
           if (findToken) {
             let token = await APIToken.findById(findToken._id)
   
-            token.token = await APISettingsUtil.generateAPIToken(),
+            token.token = await dashboardUtil.generateAPIToken(),
   
             await new APIToken(token).save();
 
@@ -203,6 +218,17 @@ const APISettings = {
           let findToken = await APIToken.findOne({token: token}).lean();
 
           if (findToken) {
+            // Delete old usage from this device/host
+            let findUsage = await APITokenUsage.findOne({
+              token: findToken._id,
+              useragent: request.headers["user-agent"], 
+              host: request.headers["host"]
+            }).lean();
+
+            if (findUsage) {
+              await APITokenUsage.deleteOne(findUsage);
+            }
+            
             // Log token usage
             let usage = {
                 token: findToken._id,
@@ -211,7 +237,6 @@ const APISettings = {
             };
   
             await new APITokenUsage(usage).save();
-
 
             if (findToken.settings === "portfolio") {
               // Do portfolio sync
@@ -236,7 +261,7 @@ const APISettings = {
               return h.response({ success: true, statistics }).code(200);
             }
 
-            let findCryptoCurrency = await CryptoCurrency.findOne({_id: findToken.settings}).lean();
+            let findCryptoCurrency = await CryptoCurrency.findOne({symbol: findToken.settings}).lean();
 
             // Ensure this crypto currency exists
             if (!findCryptoCurrency) {
