@@ -2,7 +2,13 @@ const Boom = require("@hapi/boom");
 const Joi = require("@hapi/joi");
 const userUtil = require('../utils/user.js');
 const User = require("../models/user");
+const PasswordReset = require("../models/password-reset");
 const bcrypt = require('bcrypt');
+const dashboardUtil = require('../utils/dashboard.js');
+const emailUtil = require('../utils/email.js');
+
+const env = require('dotenv');
+env.config();
 
 const Users = {
   authenticate: {
@@ -88,13 +94,70 @@ const Users = {
 
         if (user) {
           // User exists, send email
+          let newPasswordReset = await new PasswordReset({
+            token: await dashboardUtil.generateAPIToken(),
+            user: user._id
+          }).save();
 
-          // TODO: Send email with password reset
+          let passwordResetUrl = process.env.FRONTEND_URL + '/reset-password/' + newPasswordReset.token;
+
+          await emailUtil.sendEmail(
+            user.email, "Krypto - Password Reset", 
+            await emailUtil.passwordResetEmail(passwordResetUrl)
+            );
         }
 
         // User does not exists, no email sent but do not notify user if account doesn't exist
-
         return h.response({ success: true, message: "Email has been sent out with password reset instructions if this email exists." }).code(200);
+      } catch (err) {
+        return Boom.badData(err.message);
+      }
+    },
+  },
+
+  passwordResetFlow: {
+    auth: false,
+    validate: {
+      payload: {
+        email: Joi.string().email().required(),
+        newpassword: Joi.string().required(),
+        repeatpassword: Joi.string().required(),
+      },
+      failAction: function (request, h, error) {
+        console.log(error.details)
+        return Boom.badData(error.details);
+      },
+    },
+    handler: async function (request, h) {
+      try {
+        const payload = request.payload;
+        const token = request.params.token;
+
+        if (!token) {
+          return Boom.badData("Please provide all information.");
+        }
+
+        let user = await User.findByEmail(payload.email);
+
+        if (!user) {
+          return Boom.badData("Email address is not valid.");
+        }
+
+        let passwordResetToken = await PasswordReset.findOne({user: user._id, token: token});
+
+        if (!passwordResetToken) {
+          return Boom.badData("Password reset token is not valid.");
+        }
+      
+        if (payload.newpassword !== payload.repeatpassword) {
+          return Boom.badData("New passwords do not match");
+        }
+
+        user.password = await bcrypt.hash(payload.newpassword, 10);
+
+        await user.save();
+
+        return h.response({ success: true, message: "Your password has been reset successfully!" }).code(200);
       } catch (err) {
         return Boom.badData(err.message);
       }
