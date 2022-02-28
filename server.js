@@ -3,8 +3,9 @@
 const Hapi = require("@hapi/hapi");
 const Joi = require("@hapi/joi");
 const env = require("dotenv");
-
 const userUtil = require("./app/utils/user.js");
+
+const scheduler = require("./scheduler")
 
 require("./app/models/db");
 
@@ -16,6 +17,8 @@ if (result.error) {
   console.log(result.error.message);
   process.exit(1);
 }
+
+scheduler.configure();
 
 const server = Hapi.server(
   {

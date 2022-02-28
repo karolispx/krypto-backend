@@ -16,7 +16,7 @@ module.exports = [
   { method: 'POST', path: '/api/users/me/password', config: Users.updatePassword },
 
   // Dashboard endpoints
-  { method: 'GET', path: '/api/dashboard', config: Dashboard.index },
+  { method: 'GET', path: '/api/dashboard/{force?}', config: Dashboard.index },
   { method: 'GET', path: '/api/coins', config: Dashboard.coins },
   { method: 'POST', path: '/api/coins', config: Dashboard.create },
   { method: 'POST', path: '/api/coins/{id}', config: Dashboard.edit },
@@ -28,7 +28,7 @@ module.exports = [
   { method: 'POST', path: '/api/users/me/token/{id}', config: APISettings.edit },
   { method: 'POST', path: '/api/users/me/token/{id}/renew', config: APISettings.renew },
   { method: 'DELETE', path: '/api/users/me/token/{id}', config: APISettings.delete },
-  { method: 'GET', path: '/api/dashboard/{token}', config: APISettings.dashboard },
+  { method: 'GET', path: '/api/endpoint-dashboard/{token}', config: APISettings.dashboard },
   { method: 'GET', path: '/api/users/me/token/{id}/usage', config: APISettings.usage },
   { method: 'DELETE', path: '/api/users/me/token/{id}/usage', config: APISettings.clearUsage },
 
@@ -38,8 +38,5 @@ module.exports = [
   { method: 'POST', path: '/api/users/me/alerts/{id}', config: Alerts.edit },
   { method: 'POST', path: '/api/users/me/alerts/{id}/refresh', config: Alerts.refresh },
   { method: 'DELETE', path: '/api/users/me/alerts/{id}', config: Alerts.delete },
-
-
-  { method: 'GET', path: '/api/test', config: Dashboard.test },
 ];
 

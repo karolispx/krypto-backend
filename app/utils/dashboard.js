@@ -27,10 +27,10 @@ exports.coingeckoCoinsList = async function (request) {
         let findCryptoCurrency = await CryptoCurrency.findOne({symbol: coin.symbol}).lean();
 
         // Coin exists, update it
-        if (findCryptoCurrency) {          
+        if (findCryptoCurrency) {   
           let cryptoCurrency = await CryptoCurrency.findById(findCryptoCurrency._id)
           cryptoCurrency.name = sanitizer.escape(coin.name)
-          cryptoCurrency.slug = sanitizer.escape(coin.slug)
+          cryptoCurrency.slug = sanitizer.escape(coin.id)
         
           await new CryptoCurrency(cryptoCurrency).save();
         } else {
@@ -68,7 +68,9 @@ exports.coingeckoCoinValue = async function (slug, request) {
   return false
 };
 
-exports.doPortfolioSync = async function (userId, request) {
+exports.doPortfolioSync = async function (userId, daily = false, request) {
+  console.log("Portfolio sync, user: " + userId)
+  
   const CoinGeckoClient = new CoinGecko();
   
   if (userId && await User.findOne({ _id: userId })) {
@@ -87,7 +89,7 @@ exports.doPortfolioSync = async function (userId, request) {
         }
       });
     }
-  
+
     if (userCoins && Object.keys(userCoins).length) {
       let markets = await CoinGeckoClient.coins.markets({ids: Object.keys(userCoins), vs_currency: "eur"});
 
@@ -98,33 +100,53 @@ exports.doPortfolioSync = async function (userId, request) {
           userCoins[market.id].value = userCoin.balance * market.current_price
         });
       }
-    }
 
-    let value = 0
-    let cost = 0
-
-    for (let userCoin of Object.values(userCoins)) {
-      let findCoin = await Coin.findOne({_id: userCoin.id}).lean();
-
-      if (findCoin) {
-        let coin = await Coin.findById(findCoin._id)
-
-        coin.value = Number(userCoin.value)
-
-        await new Coin(coin).save();
-
-        value += userCoin.value
-        cost += userCoin.cost
+      let value = 0
+      let cost = 0
+  
+      for (let userCoin of Object.values(userCoins)) {
+        let findCoin = await Coin.findOne({_id: userCoin.id}).lean();
+  
+        if (findCoin) {
+          let coin = await Coin.findById(findCoin._id)
+  
+          coin.value = Number(userCoin.value)
+  
+          await new Coin(coin).save();
+  
+          value += userCoin.value
+          cost += userCoin.cost
+        }
       }
+  
+      // If first user portfolio sync, make it daily
+      const latestPortfolioStatistic = await PortfolioStatistic.find({ user: userId }).limit(1).sort('-time').lean();
+  
+      if (!latestPortfolioStatistic || latestPortfolioStatistic.length < 1) {
+        daily = true
+      }
+  
+      let portfolioStatistic = {
+        value: Number(value),
+        cost: Number(cost),
+        gains: Number(value - cost),
+        user: userId,
+        daily: daily
+      };
+  
+      await new PortfolioStatistic(portfolioStatistic).save();
     }
+  }
+};
 
-    let portfolioStatistic = {
-      value: Number(value),
-      cost: Number(cost),
-      gains: Number(value - cost),
-      user: userId
-    };
+exports.syncAllPortfolios = async function (daily = false, request) {
+  const users = await User.find().lean();
 
-    await new PortfolioStatistic(portfolioStatistic).save();
+  if (users) {
+    users.forEach(async (user) => {
+      if (user && user._id) {
+        await this.doPortfolioSync(user._id, daily)
+      }
+    });
   }
 };

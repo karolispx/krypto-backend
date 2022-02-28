@@ -7,15 +7,6 @@ var sanitizer = require('sanitizer');
 const PortfolioStatistic = require("../models/portfolio-statistic.js");
 
 const Dashboard = {
-  test: {
-    auth: {
-      strategy: "jwt",
-    },
-    handler: async function (request, h) {
-      return dashboardUtil.coingeckoCoinsList()
-    },
-  },
-
   index: {
     auth: {
       strategy: "jwt",
@@ -27,8 +18,14 @@ const Dashboard = {
         return Boom.unauthorized("Not logged in");
       }
 
+      let forceChartUpdate = false;
+
+      if (request.params.force) {
+        forceChartUpdate = true;
+      }
+
       // Do portfolio sync
-      await dashboardUtil.doPortfolioSync(userId);
+      await dashboardUtil.doPortfolioSync(userId, forceChartUpdate);
 
       let statistics = {
         value: 0,
@@ -46,7 +43,52 @@ const Dashboard = {
         statistics.time = latestPortfolioStatistic[0].time
       }
 
-      let chart = []
+      const dailyPortfolioStatistics = await PortfolioStatistic.find({ user: userId, daily: true }).limit(30).sort('-time').lean();
+
+      let chart = {
+        labels: [],
+        datasets: [],
+        options: {
+          responsive: true,
+          maintainAspectRatio: false    
+        },
+        time: null
+      }
+
+      if (dailyPortfolioStatistics && dailyPortfolioStatistics.length) {
+        let datasetValue = {
+          label: 'Total Value',
+          data: [],
+          borderColor: "#007bff"
+        }
+  
+        let datasetCost = {
+          label: 'Cost Basis',
+          data: [],
+          borderColor: "#6c757d"
+        }
+
+        let counter = 0;
+        let labels = [];
+
+        dailyPortfolioStatistics.forEach(async (dailyPortfolioStatistic) => {
+          counter++;
+
+          if (counter === 1) {
+            chart.time = dailyPortfolioStatistic.time;
+          }
+
+          labels.push(dailyPortfolioStatistic.time)
+          datasetValue.data.push(dailyPortfolioStatistic.value)
+          datasetCost.data.push(dailyPortfolioStatistic.cost)
+        });
+
+        chart.labels = labels.reverse();
+        datasetValue.data = datasetValue.data.reverse();
+        datasetCost.data = datasetCost.data.reverse();
+
+        chart.datasets.push(datasetValue, datasetCost)
+      }
 
       return h.response({ success: true, statistics, chart }).code(200);
     },

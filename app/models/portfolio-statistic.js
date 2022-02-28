@@ -7,6 +7,7 @@ const portfolioStatisticSchema = new Schema({
   value: Number,
   cost: Number,
   gains: Number,
+  daily: Boolean,
   user: {
     type: Schema.Types.ObjectId,
     ref: "User"
