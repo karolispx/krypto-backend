@@ -3,11 +3,11 @@
 const dashboardUtil = require('./app/utils/dashboard.js');
 const cron = require('node-cron');
 
-exports.configure = async function () {  
-  // Scheduled to run every 5minutes to process user alerts
-  // cron.schedule('*/5 * * * *', async function() {
-  //   
-  // });
+exports.configure = async function () {
+  // Scheduled to run every 5 minutes to process user alerts
+  cron.schedule('*/5 * * * *', async function() {
+    await dashboardUtil.processAlerts();
+  });
 
   // Update crypto currencies every hour
   cron.schedule('0 * * * *', async function() {

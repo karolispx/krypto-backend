@@ -31,3 +31,17 @@ exports.passwordResetEmail = async function (passwordResetUrl, request) {
     Krypto
   `
 };
+
+exports.alertEmail = async function (text, request) {
+  return `
+    Dear User, 
+
+    The following alert has been triggered: 
+    ${text}
+
+    This alert has now been fired and will need to be reset in the dashboard if you would like to receive an alert for it again.
+
+    Kind Regards, 
+    Krypto
+  `
+};

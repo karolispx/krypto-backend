@@ -3,8 +3,10 @@ const CoinGecko = require('coingecko-api');
 var sanitizer = require('sanitizer');
 const Coin = require("../models/coin");
 const User = require("../models/user");
+const Alert = require("../models/alert");
 const PortfolioStatistic = require("../models/portfolio-statistic");
 const bcrypt = require('bcrypt');
+const emailUtil = require('./email.js');
 
 exports.generateAPIToken = async function (request) {
   let randomString = (Math.random() + 1).toString(36).substring(7)
@@ -134,8 +136,10 @@ exports.doPortfolioSync = async function (userId, daily = false, request) {
         daily: daily
       };
   
-      await new PortfolioStatistic(portfolioStatistic).save();
+      return await new PortfolioStatistic(portfolioStatistic).save();
     }
+
+    return false;
   }
 };
 
@@ -146,6 +150,62 @@ exports.syncAllPortfolios = async function (daily = false, request) {
     users.forEach(async (user) => {
       if (user && user._id) {
         await this.doPortfolioSync(user._id, daily)
+      }
+    });
+  }
+};
+
+exports.processAlertEmail = async function (alert, emailText, request) {
+  await emailUtil.sendEmail(
+    alert.user.email, "Krypto - Alert Triggered", 
+    await emailUtil.alertEmail(emailText)
+  );
+
+  const findAlert = await Alert.findById(alert._id)
+
+  if (findAlert) {
+    findAlert.fired = true;
+
+    await new Alert(findAlert).save();
+  }
+}
+
+exports.processAlerts = async function (request) {
+  const alerts = await Alert.find({fired: false}).populate(["user"]).lean();
+
+  if (alerts) {
+    alerts.forEach(async (alert) => {
+      if (alert) {
+        if (alert.notify === "portfolio") {
+          let portfolioSync = await this.doPortfolioSync(alert.user);
+
+          if (portfolioSync) {
+            if (alert.rule === "gt" && portfolioSync.value > alert.number) {
+              this.processAlertEmail(alert, "Notify when Portfolio Value greater than " + alert.number);
+            } else if (alert.rule === "lt" && portfolioSync.value < alert.number) {
+              this.processAlertEmail(alert, "Notify when Portfolio Value less than " + alert.number);
+            } else if (alert.rule === "eq" && portfolioSync.value == alert.number) {
+              this.processAlertEmail(alert, "Notify when Portfolio Value equals " + alert.number);
+            }
+          }
+        } else {
+          let findCryptoCurrency = await CryptoCurrency.findOne({symbol: alert.notify}).lean();
+          
+          // Ensure this crypto currency exists
+          if (findCryptoCurrency) {
+            let cryptoCurrencyPrice = await this.coingeckoCoinValue(findCryptoCurrency.slug);
+
+            if (cryptoCurrencyPrice) {
+              if (alert.rule === "gt" && cryptoCurrencyPrice > alert.number) {
+                this.processAlertEmail(alert, "Notify when " + findCryptoCurrency.symbol.toString().toUpperCase() + " Price greater than " + alert.number);
+              } else if (alert.rule === "lt" && cryptoCurrencyPrice < alert.number) {
+                this.processAlertEmail(alert, "Notify when " + findCryptoCurrency.symbol.toString().toUpperCase() + " Price less than " + alert.number);
+              } else if (alert.rule === "eq" && cryptoCurrencyPrice == alert.number) {
+                this.processAlertEmail(alert, "Notify when " + findCryptoCurrency.symbol.toString().toUpperCase() + " Price equals " + alert.number);
+              }
+            }
+          }
+        }
       }
     });
   }

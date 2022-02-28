@@ -104,7 +104,7 @@ const Users = {
           await emailUtil.sendEmail(
             user.email, "Krypto - Password Reset", 
             await emailUtil.passwordResetEmail(passwordResetUrl)
-            );
+          );
         }
 
         // User does not exists, no email sent but do not notify user if account doesn't exist
