@@ -1,0 +1,26 @@
+{
+    "blockchains": {
+        "_model": "Blockchain",
+        "eth": {
+            "_id": "621f8f3b448a3deb00e897c2",
+            "name": "Ethereum",
+            "slug": "eth",
+            "nativetoken": "eth",
+            "scanurl": "https://etherscan.io/"
+        },
+        "bsc": {
+            "_id": "621f8f3b448a3deb00e457c3",
+            "name": "Binance Smart Chain",
+            "slug": "bsc",
+            "nativetoken": "bnb",
+            "scanurl": "https://bscscan.com/"
+        },
+        "matic": {
+            "_id": "625f8f3b448a3deb00e457c4",
+            "name": "Polygon",
+            "slug": "matic",
+            "nativetoken": "matic",
+            "scanurl": "https://polygonscan.com/"
+        }
+    }
+}

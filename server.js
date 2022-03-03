@@ -2,6 +2,8 @@
 
 const Hapi = require("@hapi/hapi");
 const Joi = require("@hapi/joi");
+const Moralis = require('moralis/node');
+
 const env = require("dotenv");
 const userUtil = require("./app/utils/user.js");
 
@@ -19,6 +21,8 @@ if (result.error) {
 }
 
 scheduler.configure();
+
+Moralis.start({ serverUrl: process.env.MORALIS_SERVER_URL, appId: process.env.MORALIS_APP_ID });
 
 const server = Hapi.server(
   {

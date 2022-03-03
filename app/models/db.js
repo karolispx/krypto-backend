@@ -13,14 +13,14 @@ Mongoose.connect(process.env.NODE_ENV === 'production' ? process.env.DB_CONNECTI
 
 const db = Mongoose.connection;
 
-// async function seed() {
-//   var seeder = require('mais-mongoose-seeder')(Mongoose);
-//   const data = require('./seed-data.json');
-//   const dbData = await seeder.seed(data, { dropDatabase: false, dropCollections: true });
+async function seed() {
+  var seeder = require('mais-mongoose-seeder')(Mongoose);
+  const data = require('./seed-data.json');
+  const dbData = await seeder.seed(data, { dropDatabase: false, dropCollections: true });
 
-//   console.log("Seeding database:");
-//   console.log(dbData);
-// }
+  console.log("Seeding database");
+  // console.log(dbData);
+}
 
 db.on("error", function(err) {
   console.log(`database connection error: ${err}`);
@@ -33,5 +33,5 @@ db.on("disconnected", function() {
 db.once("open", function() {
   console.log(`database connected to ${this.name} on ${this.host}`);
 
-  // seed();
+  seed();
 });

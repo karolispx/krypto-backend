@@ -2,6 +2,8 @@
 
 const Users = require("./app/controllers/users");
 const Dashboard = require("./app/controllers/dashboard");
+const Wallets = require("./app/controllers/wallets");
+const Blockchains = require("./app/controllers/blockchains");
 const Alerts = require("./app/controllers/alerts");
 const APISettings = require("./app/controllers/api-settings");
 
@@ -21,6 +23,15 @@ module.exports = [
   { method: 'POST', path: '/api/coins', config: Dashboard.create },
   { method: 'POST', path: '/api/coins/{id}', config: Dashboard.edit },
   { method: 'DELETE', path: '/api/coins/{id}', config: Dashboard.delete },
+
+  // Blockchains endpoints
+  { method: 'GET', path: '/api/blockchains', config: Blockchains.index },
+
+  // Wallets endpoints
+  { method: 'GET', path: '/api/wallets', config: Wallets.index },
+  { method: 'POST', path: '/api/wallets', config: Wallets.create },
+  { method: 'POST', path: '/api/wallets/{id}', config: Wallets.edit },
+  { method: 'DELETE', path: '/api/wallets/{id}', config: Wallets.delete },
 
   // API Settings endpoints
   { method: 'GET', path: '/api/users/me/token', config: APISettings.index },

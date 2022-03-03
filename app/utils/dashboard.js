@@ -76,6 +76,19 @@ exports.doPortfolioSync = async function (userId, daily = false, request) {
   const CoinGeckoClient = new CoinGecko();
   
   if (userId && await User.findOne({ _id: userId })) {
+    // If not a daily/forced sync, only do it if there hasn't been a sync done in the last 30 seconds
+    if (daily === false) {
+      var last30Seconds = new Date();
+      last30Seconds.setSeconds(last30Seconds.getSeconds()-30);
+  
+      const portfolioStatistic = await PortfolioStatistic.find({ user: userId, time: {$gte: last30Seconds} });
+
+      if (portfolioStatistic && portfolioStatistic.length) {
+        console.log("Skipping sync, recent sync exists for this user.\n")
+        return false;
+      }
+    }
+
     const coins = await Coin.find({ user: userId }).populate(["cryptocurrency"]).sort('-_id').lean();
 
     let userCoins = {};
@@ -140,6 +153,8 @@ exports.doPortfolioSync = async function (userId, daily = false, request) {
     }
 
     return false;
+  } else {
+    console.log("User not found")
   }
 };
 
@@ -177,7 +192,7 @@ exports.processAlerts = async function (request) {
     alerts.forEach(async (alert) => {
       if (alert) {
         if (alert.notify === "portfolio") {
-          let portfolioSync = await this.doPortfolioSync(alert.user);
+          let portfolioSync = await this.doPortfolioSync(alert.user._id);
 
           if (portfolioSync) {
             if (alert.rule === "gt" && portfolioSync.value > alert.number) {
