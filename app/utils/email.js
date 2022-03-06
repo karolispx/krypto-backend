@@ -1,7 +1,11 @@
 const env = require('dotenv');
 env.config();
 
-var mailgun = require('mailgun-js')({apiKey: process.env.MAILGUN_API_KEY, domain: process.env.MAILGUN_DOMAIN});
+var mailgun = require('mailgun-js')({
+  apiKey: process.env.MAILGUN_API_KEY, 
+  domain: process.env.MAILGUN_DOMAIN,
+  host: "api.eu.mailgun.net"
+});
 
 exports.sendEmail = async function (to, subject, text, request) {
   var data = {
